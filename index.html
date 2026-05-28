@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI辅助初中物理光学建模实验室</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #3b82f6;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-dark: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.95);
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            color: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            text-align: center;
+            max-width: 800px;
+        }
+        
+        .ai-tutor-panel {
+            width: 100%;
+            max-width: 1200px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            backdrop-filter: blur(10px);
+        }
+        
+        .ai-avatar {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+        }
+        
+        .ai-content { flex: 1; }
+        
+        .ai-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .ai-name {
+            font-weight: bold;
+            color: #60a5fa;
+            font-size: 1.1rem;
+        }
+        
+        .ai-status {
+            font-size: 0.8rem;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.2);
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+        
+        .ai-message {
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        
+        .ai-reasoning {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            border-left: 3px solid #f59e0b;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            display: none;
+        }
+        
+        .ai-reasoning.show { display: block; }
+        
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+        
+        button.active {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+        
+        button.ai-mode {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        .main-container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .canvas-wrapper {
+            flex: 2;
+            min-width: 600px;
+            background: var(--panel-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+        
+        #opticsCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        
+        .side-panel {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .params {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+        }
+        
+        .params.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .param-group {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .param-group.highlighted {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            animation: glow 2s infinite;
+        }
+        
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.3); }
+            50% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
+        }
+        
+        .param-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #cbd5e1;
+        }
+        
+        .value-display {
+            background: rgba(96, 165, 250, 0.2);
+            color: #60a5fa;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .formula-hint {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: linear-gradient(90deg, #334155, #475569);
+            outline: none;
+            border-radius: 10px;
+            margin-top: 8px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(96, 165, 250, 0.6);
+        }
+        
+        .learning-analytics {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .analytics-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #a78bfa;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .metric:last-child { border-bottom: none; }
+        
+        .metric-label { font-size: 0.9rem; color: #94a3b8; }
+        
+        .metric-value { font-weight: bold; color: #10b981; }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        
+        .instructions {
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 20px;
+            padding: 24px;
+            background: var(--panel-bg);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .instruction-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+        
+        .tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .tab:hover { background: rgba(96, 165, 250, 0.2); }
+        
+        .tab.active {
+            background: rgba(96, 165, 250, 0.3);
+            color: #60a5fa;
+            font-weight: 600;
+        }
+        
+        .instruction-content {
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: #e2e8f0;
+        }
+        
+        .highlight { color: #fbbf24; font-weight: 600; }
+        
+        .math-formula {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: 'Times New Roman', serif;
+            text-align: center;
+            color: #60a5fa;
+            border-left: 3px solid #60a5fa;
+        }
+        
+        .formula-live {
+            background: rgba(59, 130, 246, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            color: #fbbf24;
+        }
+        
+        @media (max-width: 950px) {
+            .main-container { flex-direction: column; }
+            .canvas-wrapper { min-width: 100%; }
+            .side-panel { min-width: 100%; }
+            h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🔬 AI辅助初中物理光学建模实验室</h1>
+    <p class="subtitle">基于轻量级前端AI架构，支持多表征关联与实时诊断 | 融合ITS三元模型与POE教学策略</p>
+    
+    <!-- AI导师面板 -->
+    <div class="ai-tutor-panel" id="aiPanel">
+        <div class="ai-avatar">🤖</div>
+        <div class="ai-content">
+            <div class="ai-header">
+                <span class="ai-name">AI物理导师</span>
+                <span class="ai-status" id="aiStatus">● 等待操作</span>
+            </div>
+            <div class="ai-message" id="aiMessage">
+                请选择实验模块开始探究。系统将实时记录您的操作轨迹，提供个性化学习支持。
+            </div>
+            <div class="ai-reasoning" id="aiReasoning">
+                <strong>💡 系统推理：</strong><span id="reasoningText"></span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button onclick="setExperiment('pinhole')" id="btn-pinhole">📸 小孔成像</button>
+        <button onclick="setExperiment('refraction')" id="btn-refraction">💎 光的折射</button>
+        <button onclick="setExperiment('interference')" id="btn-interference">🌈 双缝干涉</button>
+        <button onclick="toggleAIMode()" id="btn-ai" class="ai-mode">🧠 AI导学模式</button>
+    </div>
+    
+    <div class="main-container">
+        <div class="canvas-wrapper">
+            <canvas id="opticsCanvas" width="900" height="600"></canvas>
+        </div>
+        
+        <div class="side-panel">
+            <!-- 小孔成像参数 -->
+            <div id="pinholeParams" class="params">
+                <div class="param-group" id="pg-objHeight">
+                    <div class="param-header">
+                        <label>物体高度 h</label>
+                        <span id="objHeightValue" class="value-display">80</span>
+                    </div>
+                    <input type="range" id="objHeight" min="20" max="120" value="80" 
+                           oninput="updateParam('pinhole', 'objectHeight', this.value, 'objHeightValue')">
+                    <div class="formula-hint">放大率 m = v/u</div>
+                </div>
+                <div class="param-group" id="pg-objDist">
+                    <div class="param-header">
+                        <label>物距 u</label>
+                        <span id="objDistValue" class="value-display">200</span>
+                    </div>
+                    <input type="range" id="objDist" min="100" max="300" value="200" 
+                           oninput="updateParam('pinhole', 'objectDistance', this.value, 'objDistValue')">
+                    <div class="formula-hint">影响像的大小</div>
+                </div>
+                <div class="param-group" id="pg-focalLen">
+                    <div class="param-header">
+                        <label>像距 v</label>
+                        <span id="focalLenValue" class="value-display">300</span>
+                    </div>
+                    <input type="range" id="focalLen" min="150" max="400" value="300" 
+                           oninput="updateParam('pinhole', 'imageDistance', this.value, 'focalLenValue')">
+                    <div class="formula-hint">像距与像高成正比</div>
+                </div>
+            </div>
+            
+            <!-- 光的折射参数 -->
+            <div id="refractionParams" class="params">
+                <div class="param-group" id="pg-incidentAng">
+                    <div class="param-header">
+                        <label>入射角 θ₁</label>
+                        <span id="incidentAngValue" class="value-display">30°</span>
+                    </div>
+                    <input type="range" id="incidentAng" min="0" max="89" value="30" 
+                           oninput="updateParam('refraction', 'incidentAngle', this.value * Math.PI / 180, 'incidentAngValue', '°')">
+                    <div class="formula-hint">入射光线与法线夹角</div>
+                </div>
+                <div class="param-group" id="pg-n1">
+                    <div class="param-header">
+                        <label>上方介质 n₁</label>
+                        <span id="n1Value" class="value-display">1.00</span>
+                    </div>
+                    <input type="range" id="n1" min="1.0" max="2.5" step="0.01" value="1.0" 
+                           oninput="updateParam('refraction', 'n1', this.value, 'n1Value')">
+                    <div class="formula-hint">空气≈1.0，水≈1.33，玻璃≈1.5</div>
+                </div>
+                <div class="param-group" id="pg-n2">
+                    <div class="param-header">
+                        <label>下方介质 n₂</label>
+                        <span id="n2Value" class="value-display">1.50</span>
+                    </div>
+                    <input type="range" id="n2" min="1.0" max="2.5" step="0.01" value="1.5" 
+                           oninput="updateParam('refraction', 'n2', this.value, 'n2Value')">
+                    <div class="formula-hint">全反射条件：n₁>n₂且θ₁≥C</div>
+                </div>
+            </div>
+
+            <!-- 双缝干涉参数 -->
+            <div id="interferenceParams" class="params">
+                <div class="param-group" id="pg-slitSep">
+                    <div class="param-header">
+                        <label>双缝间距 d</label>
+                        <span id="slitSepValue" class="value-display">30</span>
+                    </div>
+                    <input type="range" id="slitSep" min="10" max="60" value="30" 
+                           oninput="updateParam('interference', 'slitSeparation', this.value, 'slitSepValue')">
+                    <div class="formula-hint">与条纹间距Δx成反比</div>
+                </div>
+                <div class="param-group" id="pg-wavelength">
+                    <div class="param-header">
+                        <label>光波长 λ</label>
+                        <span id="wavelengthValue" class="value-display">40</span>
+                    </div>
+                    <input type="range" id="wavelength" min="20" max="80" value="40" 
+                           oninput="updateParam('interference', 'wavelength', this.value, 'wavelengthValue')">
+                    <div class="formula-hint">紫光→红光：短→长</div>
+                </div>
+                <div class="param-group" id="pg-screenDist">
+                    <div class="param-header">
+                        <label>缝屏距离 L</label>
+                        <span id="screenDistValue" class="value-display">300</span>
+                    </div>
+                    <input type="range" id="screenDist" min="150" max="400" value="300" 
+                           oninput="updateParam('interference', 'distanceToScreen', this.value, 'screenDistValue')">
+                    <div class="formula-hint">与条纹间距Δx成正比</div>
+                </div>
+            </div>
+            
+            <!-- 学习分析面板 -->
+            <div class="learning-analytics">
+                <div class="analytics-title">
+                    <span>📊</span>
+                    <span>实时学习诊断</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">概念理解度</span>
+                    <span class="metric-value" id="comprehension">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="comprehensionBar" style="width: 0%"></div>
+                </div>
+                
+                <div class="metric" style="margin-top: 15px;">
+                    <span class="metric-label">探索深度</span>
+                    <span class="metric-value" id="exploration">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="explorationBar" style="width: 0%; background: linear-gradient(90deg, #8b5cf6, #a78bfa)"></div>
+                </div>
+                
+                <div class="formula-live" id="formulaDisplay" style="display:none; margin-top:15px;">
+                    Δx = <span id="val-L">300</span>×<span id="val-lambda">40</span>/<span id="val-d">30</span> = <span id="val-result">400</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="instructions">
+        <div class="instruction-tabs">
+            <div class="tab active" onclick="switchTab('theory', this)">📖 物理原理</div>
+            <div class="tab" onclick="switchTab('guidance', this)">🎯 探究任务</div>
+            <div class="tab" onclick="switchTab('formula', this)">🔢 数学模型</div>
+        </div>
+        <div class="instruction-content" id="instructionText">
+            请选择上方实验按钮查看演示，拖动滑块调整参数，观察AI导师的实时反馈。
+        </div>
+    </div>
+
+    <script>
+        // ==================== 核心系统初始化 ====================
+        const canvas = document.getElementById('opticsCanvas');
+        const ctx = canvas.getContext('2d');
+        let currentExperiment = 'interference';
+        let animationId;
+        let aiModeEnabled = false;
+        let lastDiagnosisTime = 0;
+        
+        // 学生模型 - 追踪学习状态（轻量级前端实现）
+        const studentModel = {
+            operationCount: 0,
+            paramHistory: [],
+            misconceptionFlags: [],
+            explorationDepth: 0,
+            currentMastery: 0,
+            lastInteraction: Date.now()
+        };
+        
+        // 实验状态管理
+        const experiments = {
+            pinhole: {
+                objectHeight: 80,
+                objectDistance: 200,
+                imageDistance: 300
+            },
+            refraction: {
+                incidentAngle: Math.PI / 6,
+                n1: 1.0,
+                n2: 1.5,
+                criticalAngleExplored: false
+            },
+            interference: {
+                slitSeparation: 30,
+                wavelength: 40,
+                distanceToScreen: 300,
+                inverseRelationVerified: false
+            }
+        };
+
+        // 教学内容数据库
+        const instructionDB = {
+            pinhole: {
+                theory: `📸 <strong>小孔成像原理</strong>：光在同种均匀介质中沿直线传播。<br>
+                        <div class="math-formula">放大率 m = v/u = h'/h</div>
+                        ✅ 核心特点：成<strong class="highlight">倒立的实像</strong>（上下颠倒、左右相反）。<br>
+                        ✅ 成像规律：物距 > 像距 → 缩小像；物距 < 像距 → 放大像。`,
+                guidance: `🎯 <strong>探究任务</strong>（POE流程）：<br>
+                          1. <strong>预测</strong>：当v/u=1.5时，像高是物高的几倍？<br>
+                          2. <strong>观察</strong>：调节参数验证，注意像的倒立特性<br>
+                          3. <strong>解释</strong>：总结成像规律，理解光的直线传播`,
+                formula: `🔢 <strong>数学模型</strong>：<br>
+                         <div class="math-formula">h'/h = v/u</div>
+                         其中：h=物体高度，h'=像高，u=物距，v=像距<br>
+                         当v>u时，成放大的像；v<u时，成缩小的像`
+            },
+            refraction: {
+                theory: `💎 <strong>光的折射与全反射</strong>：<br>
+                        <div class="math-formula">Snell定律：n₁sinθ₁ = n₂sinθ₂</div>
+                        ✅ 全反射条件：①光密→光疏(n₁>n₂)；②入射角θ₁≥临界角C<br>
+                        <div class="math-formula">临界角 C = arcsin(n₂/n₁)</div>`,
+                guidance: `🎯 <strong>探究任务</strong>：<br>
+                          1. 设置n₁=1.5(玻璃), n₂=1.0(空气)，逐渐增加入射角<br>
+                          2. 寻找临界角：折射光线刚好消失时的入射角<br>
+                          3. 验证：记录临界角，与理论值arcsin(1/1.5)≈41.8°比较`,
+                formula: `🔢 <strong>数学模型</strong>：<br>
+                         折射定律：sinθ₂ = (n₁/n₂)sinθ₁<br>
+                         全反射临界条件：sinC = n₂/n₁  (n₁>n₂)<br>
+                         <span class="highlight">注意</span>：当θ₁≥C时，发生全反射，无折射光`
+            },
+            interference: {
+                theory: `🌈 <strong>杨氏双缝干涉</strong>：光的波动性的实验证明。<br>
+                        ✅ 相干条件：频率相同、相位差恒定<br>
+                        ✅ 条纹特征：等间距、明暗相间、中央为亮纹`,
+                guidance: `🎯 <strong>核心探究</strong>：验证条纹间距公式 <span class="highlight">Δx = Lλ/d</span><br>
+                          重点观察：<strong class="highlight">Δx与d成反比</strong>的关系<br><br>
+                          1. 固定L和λ，改变d，观察条纹疏密变化<br>
+                          2. 思考：当d增大一倍，条纹间距如何变化？<br>
+                          3. 验证：当d=20和d=40时，条纹数量的比值是否为2:1？`,
+                formula: `🔢 <strong>数学模型</strong>：<br>
+                         光程差：Δ = d·sinθ ≈ d·y/L (小角度近似)<br>
+                         明纹条件：Δ = mλ (m=0,±1,±2...)<br>
+                         <div class="math-formula">条纹间距：Δx = Lλ/d</div>
+                         关键理解：d↑→Δx↓（反比）；L↑或λ↑→Δx↑（正比）`
+            }
+        };
+
+        // ==================== AI导师系统（基于规则引擎） ====================
+        const AITutor = {
+            diagnose: function() {
+                if (!aiModeEnabled) return;
+                
+                const exp = experiments[currentExperiment];
+                const model = studentModel;
+                let message = "";
+                let reasoning = "";
+                let comprehension = 0;
+                let exploration = Math.min(100, model.operationCount * 5);
+                
+                if (currentExperiment === 'interference') {
+                    // 检查参数探索情况
+                    const hasChangedD = model.paramHistory.some(p => p.param === 'slitSeparation');
+                    const hasChangedLambda = model.paramHistory.some(p => p.param === 'wavelength');
+                    const hasChangedL = model.paramHistory.some(p => p.param === 'distanceToScreen');
+                    
+                    if (hasChangedD && hasChangedLambda && hasChangedL) {
+                        comprehension = 75;
+                        message = "很好！你已探索了三个关键参数。现在请重点观察：当双缝间距d增大时，条纹是变密还是变疏？";
+                        reasoning = "检测到用户已调节d、λ、L三个参数，具备分析公式关系的基础。提示关注反比关系。";
+                        
+                        // 检查是否理解反比关系（通过操作历史判断）
+                        const dOps = model.paramHistory.filter(p => p.param === 'slitSeparation');
+                        if (dOps.length >= 2) {
+                            const trend = dOps[dOps.length-1].value > dOps[0].value ? '增大' : '减小';
+                            message += `<br><br>💡 <strong>观察提示</strong>：你刚才将d${trend}了，注意到屏幕上条纹间距的变化了吗？根据公式Δx=Lλ/d，条纹间距应该${trend==='增大'?'减小':'增大'}。`;
+                            reasoning += "基于用户近期操作趋势，提示验证反比关系。";
+                        }
+                    } else if (model.operationCount === 0) {
+                        message = "双缝干涉实验已就绪。请尝试拖动滑块改变实验参数，观察干涉图样的变化。";
+                        reasoning = "初始状态：等待用户首次操作。";
+                        comprehension = 10;
+                    } else {
+                        message = `你已进行${model.operationCount}次参数调整。建议尝试改变其他参数，全面理解干涉公式Δx=Lλ/d中各物理量的关系。`;
+                        comprehension = 30 + exploration * 0.3;
+                    }
+                    
+                    // 特定认知诊断
+                    if (exp.slitSeparation < 20 && exp.wavelength > 60) {
+                        message += "<br><br>⚠️ <strong>注意</strong>：当前缝距过小且波长过大，可能导致条纹过于稀疏（空间相干性限制），建议调整参数以获得清晰干涉图样。";
+                        if (!model.misconceptionFlags.includes('coherence')) {
+                            model.misconceptionFlags.push('coherence');
+                        }
+                    }
+                } 
+                else if (currentExperiment === 'refraction') {
+                    const criticalAngle = Math.asin(exp.n2/exp.n1) * 180/Math.PI;
+                    const currentAngle = exp.incidentAngle * 180/Math.PI;
+                    
+                    if (exp.n1 > exp.n2) {
+                        exploration = Math.min(100, Math.abs(currentAngle - criticalAngle) * 3 + model.operationCount * 5);
+                        
+                        if (Math.abs(currentAngle - criticalAngle) < 2) {
+                            message = "🎯 <strong>接近临界角！</strong>当前入射角约" + currentAngle.toFixed(1) + "°，非常接近临界角" + criticalAngle.toFixed(1) + "°。请缓慢增大入射角，观察折射光线的变化。";
+                            reasoning = "入射角接近理论临界角（arcsin(n2/n1)），触发关键观察点提示。";
+                            comprehension = 85;
+                            exp.criticalAngleExplored = true;
+                        } else if (currentAngle > criticalAngle) {
+                            message = "✅ <strong>全反射现象已观察！</strong>此时折射光完全消失，所有光线均被反射回光密介质。这是光纤通信的物理基础。";
+                            reasoning = "检测到入射角超过临界角，确认全反射现象发生。";
+                            comprehension = 90;
+                        } else {
+                            message = `当前入射角为${currentAngle.toFixed(1)}°，临界角约为${criticalAngle.toFixed(1)}°。继续增大入射角可观察全反射现象。`;
+                            comprehension = Math.min(80, currentAngle/criticalAngle * 70);
+                        }
+                    } else {
+                        message = "当前光从光疏介质射向光密介质(n₁<n₂)，折射光线始终存在，不会发生全反射。<br>💡 提示：尝试将上方介质设为玻璃(n₁=1.5)，下方设为空气(n₂=1.0)，再观察全反射现象。";
+                        comprehension = 40;
+                    }
+                }
+                else if (currentExperiment === 'pinhole') {
+                    const m = exp.imageDistance / exp.objectDistance;
+                    comprehension = Math.min(90, 40 + model.operationCount * 10);
+                    
+                    if (Math.abs(m - 1) < 0.1) {
+                        message = "当前像距与物距近似相等，此时像与物大小相等。注意观察像的<strong>倒立</strong>特性。";
+                    } else {
+                        message = `当前放大率m=${m.toFixed(2)}，成${m>1?'放大':'缩小'}的像。<br>关键概念：小孔成像的像永远是<strong>倒立</strong>的，这与透镜成像不同。`;
+                    }
+                }
+                
+                this.updateUI(message, reasoning, comprehension, exploration);
+                model.currentMastery = comprehension;
+            },
+            
+            updateUI: function(message, reasoning, comp, exp) {
+                document.getElementById('aiMessage').innerHTML = message;
+                document.getElementById('aiStatus').textContent = aiModeEnabled ? '● 实时监测中' : '● 等待启动';
+                
+                const reasoningDiv = document.getElementById('aiReasoning');
+                if (reasoning && aiModeEnabled) {
+                    document.getElementById('reasoningText').textContent = reasoning;
+                    reasoningDiv.classList.add('show');
+                } else {
+                    reasoningDiv.classList.remove('show');
+                }
+                
+                document.getElementById('comprehension').textContent = comp.toFixed(0) + '%';
+                document.getElementById('comprehensionBar').style.width = comp + '%';
+                document.getElementById('exploration').textContent = exp.toFixed(0) + '%';
+                document.getElementById('explorationBar').style.width = exp + '%';
+            },
+            
+            // 脚手架：高亮关键参数
+            highlightParam: function(paramId) {
+                if (!aiModeEnabled) return;
+                document.querySelectorAll('.param-group').forEach(g => g.classList.remove('highlighted'));
+                const group = document.getElementById(paramId);
+                if (group) group.classList.add('highlighted');
+                setTimeout(() => group.classList.remove('highlighted'), 3000);
+            }
+        };
+
+        // ==================== 渲染引擎 ====================
+        function mainLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            
+            if (currentExperiment === 'pinhole') drawPinhole();
+            else if (currentExperiment === 'refraction') drawRefraction();
+            else if (currentExperiment === 'interference') drawInterference();
+            
+            animationId = requestAnimationFrame(mainLoop);
+        }
+        
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 50) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+            }
+            for (let i = 0; i < canvas.height; i += 50) {
+                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+            }
+        }
+
+        function drawPinhole() {
+            const exp = experiments.pinhole;
+            const holeX = 300;
+            const screenX = holeX + exp.imageDistance * 0.8;
+            const scale = 0.8;
+            const holeY = canvas.height / 2;
+            
+            // 背景
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            bgGrad.addColorStop(0, '#1e293b');
+            bgGrad.addColorStop(1, '#0f172a');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 物体（蜡烛）
+            const objectY = holeY - exp.objectHeight / 2;
+            const candleX = holeX - exp.objectDistance * scale;
+            
+            // 蜡烛火焰动画
+            const flameHeight = 20 + Math.sin(Date.now()/200) * 3;
+            ctx.fillStyle = '#f59e0b';
+            ctx.beginPath();
+            ctx.moveTo(candleX + 12.5, objectY);
+            ctx.quadraticCurveTo(candleX + 5, objectY - flameHeight/2, candleX + 12.5, objectY - flameHeight);
+            ctx.quadraticCurveTo(candleX + 20, objectY - flameHeight/2, candleX + 12.5, objectY);
+            ctx.fill();
+            
+            // 蜡烛体
+            const objGrad = ctx.createLinearGradient(candleX, objectY, candleX + 25, objectY + exp.objectHeight);
+            objGrad.addColorStop(0, '#ef4444');
+            objGrad.addColorStop(1, '#991b1b');
+            ctx.fillStyle = objGrad;
+            ctx.fillRect(candleX, objectY, 25, exp.objectHeight);
+            
+            // 标签
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = "bold 14px Arial";
+            ctx.fillText("物体(蜡烛)", candleX - 10, objectY + exp.objectHeight + 25);
+            ctx.font = "12px Arial";
+            ctx.fillText(`h=${exp.objectHeight}px`, candleX - 10, objectY + exp.objectHeight + 45);
+            
+            // 小孔挡板
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(holeX - 5, 0, 10, holeY - 8);
+            ctx.fillRect(holeX - 5, holeY + 8, 10, canvas.height);
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillRect(holeX - 2, holeY - 2, 4, 4);
+            
+            // 计算像（倒立）
+            const magnification = exp.imageDistance / exp.objectDistance;
+            const imageHeight = exp.objectHeight * magnification;
+            const imageY = holeY + imageHeight / 2;
+            
+            // 光线追踪可视化
+            ctx.strokeStyle = 'rgba(251, 191, 36, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            
+            // 从物体顶端经过小孔到像底部
+            ctx.beginPath();
+            ctx.moveTo(candleX + 12.5, objectY);
+            ctx.lineTo(holeX, holeY);
+            ctx.lineTo(screenX, imageY);
+            ctx.stroke();
+            
+            // 从物体底部经过小孔到像顶端
+            ctx.beginPath();
+            ctx.moveTo(candleX + 12.5, objectY + exp.objectHeight);
+            ctx.lineTo(holeX, holeY);
+            ctx.lineTo(screenX, imageY - imageHeight);
+            ctx.stroke();
+            
+            ctx.setLineDash([]);
+            
+            // 像（倒立）
+            const imgGrad = ctx.createLinearGradient(screenX, imageY - imageHeight, screenX + 25, imageY);
+            imgGrad.addColorStop(0, '#3b82f6');
+            imgGrad.addColorStop(1, '#1d4ed8');
+            ctx.fillStyle = imgGrad;
+            ctx.fillRect(screenX, imageY - imageHeight, 25, imageHeight);
+            
+            // 像的标签（倒立标注）
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = "bold 14px Arial";
+            ctx.save();
+            ctx.translate(screenX + 40, imageY - imageHeight/2);
+            ctx.rotate(Math.PI);
+            ctx.fillText("像(倒立)", 0, 0);
+            ctx.restore();
+            
+            ctx.font = "12px Arial";
+            ctx.fillText(`h'=${imageHeight.toFixed(1)}px`, screenX + 35, imageY - imageHeight - 10);
+            
+            // 放大率实时计算显示
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = "bold 16px Arial";
+            ctx.fillText(`放大率 m = ${magnification.toFixed(2)}`, 50, 50);
+        }
+
+        function drawRefraction() {
+            const exp = experiments.refraction;
+            const centerX = canvas.width / 2;
+            const mediumY = 350;
+            
+            // 介质背景
+            const airGrad = ctx.createLinearGradient(0, 0, 0, mediumY);
+            airGrad.addColorStop(0, '#0f172a');
+            airGrad.addColorStop(1, '#1e293b');
+            ctx.fillStyle = airGrad;
+            ctx.fillRect(0, 0, canvas.width, mediumY);
+            
+            const glassGrad = ctx.createLinearGradient(0, mediumY, 0, canvas.height);
+            glassGrad.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
+            glassGrad.addColorStop(1, 'rgba(30, 58, 138, 0.4)');
+            ctx.fillStyle = glassGrad;
+            ctx.fillRect(0, mediumY, canvas.width, canvas.height - mediumY);
+            
+            // 分界面
+            ctx.strokeStyle = '#60a5fa';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, mediumY);
+            ctx.lineTo(canvas.width, mediumY);
+            ctx.stroke();
+            
+            // 法线
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.5)';
+            ctx.setLineDash([8, 4]);
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(centerX, 50);
+            ctx.lineTo(centerX, canvas.height - 50);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 计算角度
+            const angleInRad = exp.incidentAngle;
+            const sinRefracted = (exp.n1 / exp.n2) * Math.sin(angleInRad);
+            let isTIR = false;
+            let refractedAngle = 0;
+            
+            if (exp.n1 > exp.n2 && Math.abs(sinRefracted) > 1) {
+                isTIR = true;
+            } else {
+                refractedAngle = Math.asin(sinRefracted);
+            }
+            
+            const rayLength = 180;
+            
+            // 入射光线
+            const inX = centerX - rayLength * Math.sin(angleInRad);
+            const inY = mediumY - rayLength * Math.cos(angleInRad);
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(inX, inY);
+            ctx.lineTo(centerX, mediumY);
+            ctx.stroke();
+            
+            // 入射点发光效果
+            ctx.fillStyle = 'rgba(251, 191, 36, 0.5)';
+            ctx.beginPath();
+            ctx.arc(centerX, mediumY, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 反射光线（始终存在）
+            const reflX = centerX + rayLength * Math.sin(angleInRad);
+            const reflY = mediumY - rayLength * Math.cos(angleInRad);
+            ctx.strokeStyle = isTIR ? '#fbbf24' : 'rgba(251, 191, 36, 0.4)';
+            ctx.lineWidth = isTIR ? 4 : 2;
+            ctx.beginPath();
+            ctx.moveTo(centerX, mediumY);
+            ctx.lineTo(reflX, reflY);
+            ctx.stroke();
+            
+            if (!isTIR) {
+                // 折射光线
+                const refrX = centerX + rayLength * Math.sin(refractedAngle);
+                const refrY = mediumY + rayLength * Math.cos(refractedAngle);
+                ctx.strokeStyle = '#10b981';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(centerX, mediumY);
+                ctx.lineTo(refrX, refrY);
+                ctx.stroke();
+                
+                // 折射角标注
+                ctx.fillStyle = '#10b981';
+                ctx.font = "14px Arial";
+                ctx.fillText(`θ₂=${(refractedAngle*180/Math.PI).toFixed(1)}°`, centerX + 30, mediumY + 40);
+            } else {
+                // 全反射标识
+                ctx.fillStyle = '#ef4444';
+                ctx.font = "bold 20px Arial";
+                ctx.fillText("⚠️ 全反射", centerX + 100, mediumY + 100);
+                ctx.font = "16px Arial";
+                ctx.fillText("临界角 C = " + (Math.asin(exp.n2/exp.n1)*180/Math.PI).toFixed(1) + "°", centerX + 100, mediumY + 130);
+            }
+            
+            // 入射角标注
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = "14px Arial";
+            ctx.fillText(`θ₁=${(angleInRad*180/Math.PI).toFixed(1)}°`, centerX - 80, mediumY - 20);
+            
+            // 介质标签
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = "bold 16px Arial";
+            ctx.fillText(`介质1: n₁=${exp.n1.toFixed(2)}`, 50, 50);
+            ctx.fillText(`介质2: n₂=${exp.n2.toFixed(2)}`, 50, canvas.height - 30);
+            
+            if (exp.n1 > exp.n2) {
+                ctx.fillStyle = '#fbbf24';
+                ctx.fillText("光密→光疏 (可能发生全反射)", 50, 80);
+            } else {
+                ctx.fillStyle = '#94a3b8';
+                ctx.fillText("光疏→光密 (无全反射)", 50, 80);
+            }
+        }
+
+        function drawInterference() {
+            const exp = experiments.interference;
+            const slitX = 200;
+            const screenX = slitX + exp.distanceToScreen;
+            const centerY = canvas.height / 2;
+            const topSlitY = centerY - exp.slitSeparation / 2;
+            const bottomSlitY = centerY + exp.slitSeparation / 2;
+            
+            // 背景
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 光波传播动画
+            const time = Date.now() / 1000;
+            
+            ctx.strokeStyle = 'rgba(167, 139, 250, 0.15)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 8; i++) {
+                const radius = ((time * 50 + i * 40) % 200);
+                ctx.beginPath();
+                ctx.arc(slitX, topSlitY, radius, -Math.PI/2, Math.PI/2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(slitX, bottomSlitY, radius, -Math.PI/2, Math.PI/2);
+                ctx.stroke();
+            }
+            
+            // 挡板
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(slitX - 10, 0, 20, topSlitY - 4);
+            ctx.fillRect(slitX - 10, topSlitY + 4, 20, exp.slitSeparation - 8);
+            ctx.fillRect(slitX - 10, bottomSlitY + 4, 20, canvas.height - bottomSlitY - 4);
+            
+            // 双缝发光
+            ctx.fillStyle = '#a78bfa';
+            ctx.shadowColor = '#a78bfa';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.arc(slitX, topSlitY, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(slitX, bottomSlitY, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // 光屏
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(screenX, 0, 20, canvas.height);
+            
+            // 计算并绘制干涉条纹
+            const dx = exp.distanceToScreen;
+            const d = exp.slitSeparation;
+            const lambda = exp.wavelength;
+            
+            for (let y = 0; y < canvas.height; y++) {
+                const yRel = y - centerY;
+                const r1 = Math.sqrt(dx*dx + (yRel - d/2)**2);
+                const r2 = Math.sqrt(dx*dx + (yRel + d/2)**2);
+                const pathDiff = r2 - r1;
+                const phase = (2 * Math.PI * pathDiff) / lambda;
+                const intensity = Math.pow(Math.cos(phase / 2), 2);
+                
+                let hue;
+                if (lambda < 30) hue = 260;
+                else if (lambda < 40) hue = 220;
+                else if (lambda < 50) hue = 140;
+                else if (lambda < 60) hue = 60;
+                else hue = 0;
+                
+                ctx.fillStyle = `hsla(${hue}, 100%, 70%, ${intensity * 0.8})`;
+                ctx.fillRect(screenX + 20, y, 100, 1);
+                ctx.fillStyle = `hsla(${hue}, 100%, 80%, ${intensity})`;
+                ctx.fillRect(screenX, y, 20, 1);
+            }
+            
+            // 中央亮纹标注
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = "bold 14px Arial";
+            ctx.fillText("中央亮纹", screenX + 130, centerY);
+            ctx.font = "12px Arial";
+            ctx.fillText("(m=0)", screenX + 130, centerY + 20);
+            
+            // 一级亮纹标注
+            const fringeSpacing = (exp.distanceToScreen * exp.wavelength) / exp.slitSeparation;
+            ctx.fillText("一级亮纹", screenX + 130, centerY + fringeSpacing);
+            ctx.fillText("(m=1)", screenX + 130, centerY + fringeSpacing + 20);
+            ctx.fillText("一级亮纹", screenX + 130, centerY - fringeSpacing);
+            ctx.fillText("(m=-1)", screenX + 130, centerY - fringeSpacing + 20);
+            
+            // 参数显示与多表征关联
+            const calcFringe = (exp.distanceToScreen * exp.wavelength / exp.slitSeparation).toFixed(1);
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = "bold 16px Courier New";
+            ctx.fillText(`条纹间距 Δx = ${calcFringe} px`, 50, 40);
+            ctx.font = "12px Arial";
+            ctx.fillText(`(Δx = Lλ/d = ${exp.distanceToScreen}×${exp.wavelength}/${exp.slitSeparation})`, 50, 60);
+            
+            // 更新公式显示
+            document.getElementById('val-L').textContent = exp.distanceToScreen;
+            document.getElementById('val-lambda').textContent = exp.wavelength;
+            document.getElementById('val-d').textContent = exp.slitSeparation;
+            document.getElementById('val-result').textContent = calcFringe;
+        }
+
+        // ==================== 交互控制 ====================
+        function setExperiment(expName) {
+            if (animationId) cancelAnimationFrame(animationId);
+            
+            document.querySelectorAll('.params').forEach(el => el.classList.remove('active'));
+            document.getElementById(`${expName}Params`).classList.add('active');
+            document.querySelectorAll('.controls button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${expName}`).classList.add('active');
+            
+            studentModel.paramHistory = [];
+            studentModel.operationCount = 0;
+            studentModel.misconceptionFlags = [];
+            
+            currentExperiment = expName;
+            
+            // 更新说明内容
+            const firstTab = document.querySelector('.instruction-tabs .tab');
+            if (firstTab) switchTab('theory', firstTab);
+            
+            // 显示公式面板（仅干涉实验）
+            document.getElementById('formulaDisplay').style.display = 
+                (expName === 'interference') ? 'block' : 'none';
+            
+            if (aiModeEnabled) {
+                setTimeout(() => AITutor.diagnose(), 100);
+            }
+            
+            mainLoop();
+        }
+
+        function updateParam(expName, paramName, value, valueDisplayId, suffix = '') {
+            const oldValue = experiments[expName][paramName];
+            const newValue = parseFloat(value);
+            experiments[expName][paramName] = newValue;
+            
+            const displayValue = parseFloat(value);
+            document.getElementById(valueDisplayId).textContent = 
+                displayValue.toFixed(2).replace('.00', '') + suffix;
+            
+            studentModel.operationCount++;
+            studentModel.paramHistory.push({
+                param: paramName,
+                value: newValue,
+                previousValue: oldValue,
+                timestamp: Date.now()
+            });
+            
+            // 节流诊断（每800ms最多一次）
+            const now = Date.now();
+            if (aiModeEnabled && now - lastDiagnosisTime > 800) {
+                AITutor.diagnose();
+                lastDiagnosisTime = now;
+            }
+        }
+
+        function toggleAIMode() {
+            aiModeEnabled = !aiModeEnabled;
+            const btn = document.getElementById('btn-ai');
+            
+            if (aiModeEnabled) {
+                btn.classList.add('active');
+                btn.textContent = '🧠 AI导学模式：开';
+                AITutor.diagnose();
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '🧠 AI导学模式';
+                document.getElementById('aiReasoning').classList.remove('show');
+                document.querySelectorAll('.param-group').forEach(g => g.classList.remove('highlighted'));
+            }
+        }
+
+        function switchTab(tabName, element) {
+            const content = document.getElementById('instructionText');
+            
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            if (element) element.classList.add('active');
+            
+            if (instructionDB[currentExperiment] && instructionDB[currentExperiment][tabName]) {
+                content.innerHTML = instructionDB[currentExperiment][tabName];
+            }
+        }
+
+        // ==================== 初始化 ====================
+        window.onload = function() {
+            setExperiment('interference');
+        };
+    </script>
+</body>
+</html>
